@@ -32,14 +32,6 @@ RANDOM_SEED = random.randint(1, 1000000)
 logging.basicConfig(level=logging.INFO)
 
 
-def remove_prom_files_for_process(process):
-    if 'prometheus_multiproc_dir' in os.environ:
-        multiproc_dir = os.environ['prometheus_multiproc_dir']
-        for f in glob.glob(os.path.join(multiproc_dir, '*_{}.db'.format(process.pid))):
-            logging.debug("Remove prom multiproc files: {}".format(f))
-            os.remove(f)
-
-
 class Writer():
 
     def __init__(self, worker_id):
@@ -106,28 +98,14 @@ def start_writers():
         for i, process in enumerate(writer_processes):
             writer_process_metric.labels(writers[i].worker_id).set(int(process.is_alive()))
 
-            if not process.is_alive():
-                logging.info(
-                    "Restarting {} process # {} [exitCode: {}]".format(
-                        writers[i].worker_id, i, process.exitcode)
-                )
-                # attempt to wait until dead process cleans up
-                process.join()
-
-                remove_prom_files_for_process(process)
-
-                w = writers[i]
-                w.process_from_beginning = False
-                writer_processes[i] = Process(target=w.serve)
-                writer_processes[i].start()
+            # imitate context switching caused by IO
+            sleep(0.01)
 
         if random.randint(1, 100) < 50:
             logging.info("RECONFIGURE!")
             for i, process in enumerate(writer_processes):
                 process.terminate()
                 process.join()
-
-                remove_prom_files_for_process(process)
 
             new_writers = copy.copy(writer_nums)
             random.shuffle(new_writers)
