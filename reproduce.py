@@ -22,9 +22,6 @@ from prometheus_client import Gauge
 # - stop when 30 s total
 # outcome: managed to reproduce in 30 s or not?
 
-
-BATCH_SIZE = 1000
-SENTRY_ENV_VAR = 'SENTRY_DSN'
 PROM_METRICS_ENDPOINT_PORT = 8000
 
 RANDOM_SEED = random.randint(1, 1000000)
